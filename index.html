@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Specific ShEx use cases and requirements</title>
+<style>
+/* General Reset and Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+    margin: 20px;
+    padding: 0;
+}
+
+h1, h2, h3 {
+    color: #2c3e50;
+}
+
+h1 {
+    border-bottom: 2px solid #2980b9;
+    padding-bottom: 10px;
+}
+
+h2 {
+    color: #3498db;
+    border-bottom: 1px solid #bdc3c7;
+    padding-bottom: 5px;
+}
+
+h3 {
+    color: #16a085;
+    margin-top: 20px;
+}
+
+p {
+    margin: 10px 0;
+}
+
+pre {
+    background-color: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    padding: 10px;
+    overflow: auto;
+    font-family: monospace;
+}
+
+ul {
+    margin: 10px 20px;
+    list-style-type: square;
+}
+
+li {
+    margin: 5px 0;
+}
+
+a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.title {
+    text-align: center;
+    margin-top: 0;
+}
+
+.authors {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.abstract {
+    background-color: #ffffff;
+    border-left: 5px solid #3498db;
+    padding: 10px;
+    margin: 20px 0;
+}
+
+</style>
+</head>
+<h1 class="title">Specific ShEx use cases and requirements</h1>
+<p class="authors">Dominik Tomaszuk and Iovka Boneva</p>
+<p class="abstract">Abstract: This document explores the application of Shape Expressions (ShEx) for managing and validating Resource Description Framework (RDF) data across various domains. ShEx, a concise, high-level language for RDF validation, provides mechanisms to ensure data conforms to specified patterns, which is crucial for operational integrity and data interoperability. Each scenario underscores the utility of ShEx in enhancing data validation, providing a foundation for reliable and standardized data operations. This investigation highlights ShEx's flexibility and efficiency in different settings and elucidates its potential to contribute significantly to RDF data management strategies in various domains.</p>
+<h1 id="uc">Use Cases</h1>
+<h2 id="uc1">Use Case 1: Data Interchange in Enterprise Applications</h2>
+<p>Objective: To facilitate the exchange of RDF data between different enterprise applications, ensuring interoperability and data integrity.</p>
+<h3>RDF Representation for Purchase Orders</h3>
+<p>Here&rsquo;s how you could represent a purchase order using Turtle syntax, an RDF serialization format that is compact and human-readable:</p>
+<pre>@prefix xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt; .
+@prefix po: &lt;http://example.com/po/&gt; .
+@prefix dc: &lt;http://purl.org/dc/elements/1.1/&gt; .
+po:PO12345
+ a po:PurchaseOrder ;
+ po:PO_Number "PO12345" ;
+ po:SupplierName "GraphDB Supplies Inc." ;
+ dc:date "2024-04-12"^^xsd:date ;
+ po:hasItem po:Item9876, po:Item1234 ;
+ po:Comments "Please ensure all items are delivered by the end of the month." .
+po:Item9876
+ a po:Item ;
+ po:PartNumber "XY-9876" ;
+ po:Description "Graph Processor Unit" ;
+ po:Quantity 100 ;
+ po:UnitPrice 499.99 ;
+ po:Comment "Urgent delivery requested" .
+po:Item1234
+ a po:Item ;
+ po:PartNumber "AB-1234" ;
+ po:Description "Memory Module 16GB" ;
+ po:Quantity 50 ;
+ po:UnitPrice 75.50 .
+</pre>
+<h3>Focusing on ShEx features</h3>
+<ul>
+<li>Node constraints</li>
+<li>Triple constraints</li>
+<li>Datatypes</li>
+<li>Cardinalities</li>
+</ul>
+<h3>ShEx Schema for&nbsp;Validating&nbsp;RDF Data</h3>
+<h3>A Shape Expressions schema corresponding to the RDF representation of purchase orders would look like this:</h3>
+<pre>PREFIX xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt;
+PREFIX po: &lt;http://example.com/po/&gt;
+po:PurchaseOrderShape {
+ a [po:PurchaseOrder] ;
+ po:PO_Number xsd:string ;
+ po:SupplierName xsd:string ;
+ dc:date xsd:date ;
+ po:hasItem @po:ItemShape+ ;
+ po:Comments xsd:string?
+}
+po:ItemShape {
+ a [po:Item] ;
+ po:PartNumber xsd:string ;
+ po:Description xsd:string ;
+ po:Quantity xsd:integer ;
+ po:UnitPrice xsd:decimal ;
+ po:Comment xsd:string?
+}
+</pre>
+<h3>Explanation of the ShEx Components</h3>
+<ul>
+<li>po:PurchaseOrderShape: This is the shape for validating a purchase order.</li>
+<li>a [po:PurchaseOrder]: Asserts that the RDF type (rdf:type) of the node is po:PurchaseOrder.</li>
+<li>po:PO_Number, po:SupplierName, po:Comments: These are simple string properties. Comments is optional (denoted by ?).</li>
+<li>dc:date: Validates the date property with the expected datatype xsd:date.</li>
+<li>po:hasItem @po:ItemShape+: Ensures there is one or more linked items, validated by po:ItemShape.</li>
+<li>po:ItemShape: This is the shape for validating individual items in the purchase order.</li>
+<li>a [po:Item]: Asserts the RDF type of the node.</li>
+<li>po:PartNumber, po:Description: String properties describing the item.</li>
+<li>po:Quantity: Validates the quantity as an integer.</li>
+<li>po:UnitPrice: Validates the unit price as a decimal.</li>
+<li>po:Comment: An optional string property for additional comments.</li>
+</ul>
+<h2 id="uc2">Use Case 2: Content Management Systems (CMS)</h2>
+<p>Objective: To validate RDF data representing content such as articles, metadata, and configuration within a CMS.</p>
+<h3>RDF Representation for Articles in a CMS</h3>
+<p>In an RDF context, each article and its properties would be expressed as triples consisting of a subject, predicate, and object. We'll use a basic vocabulary for the sake of illustration, though in a production environment, you might prefer using a standardized vocabulary like Dublin Core or schema.org.</p>
+<p>Here is an example using Turtle syntax, which is a compact and readable syntax for writing RDF:</p>
+<pre>PREFIX dc: &lt;http://purl.org/dc/elements/1.1/&gt;
+PREFIX : &lt;http://example.org/article/&gt;
+PREFIX xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt;
+:article1 a :Article ;
+ dc:title "Exploring Graph Databases"^^xsd:string ;
+ dc:creator "Jane Doe"^^xsd:string ;
+ dc:datePublished "2024-04-10"^^xsd:date ;
+ dc:description "This article provides an overview of graph databases, their uses, and advantages..."^^xsd:string ;
+ :category "Technology"^^xsd:string ;
+ :status :Published ;
+ :tag "Database"^^xsd:string, "Graphs"^^xsd:string .
+:article2 a :Article ;
+ dc:title "Advances in Property Graphs"^^xsd:string ;
+ dc:creator "John Smith"^^xsd:string ;
+ dc:description "Property graphs allow for the representation of structured data in a flexible way..."^^xsd:string ;
+ :category "Graph Theory"^^xsd:string ; # Assuming the category might need a string value.
+ :status :Draft ;
+ :tag "Property Graphs"^^xsd:string . # Assuming a single tag for simplicity, multiple tags can be added similarly
+</pre>
+<h3>Focusing on ShEx features</h3>
+<ul>
+<li>Choices</li>
+<li>OneOf operator</li>
+<li>EachOf operator</li>
+<li>Grouping</li>
+</ul>
+<h3>ShEx Schema for Validating RDF Data</h3>
+<p>Shape Expressions (ShEx) can validate the structure and content of RDF graphs. Here's how you could write a ShEx schema corresponding to the RDF representation of articles:</p>
+<pre>PREFIX dc:
+&lt;http://purl.org/dc/elements/1.1/&gt;
+PREFIX :
+&lt;http://example.org/article/&gt;
+:ArticleShape{
+ a [ :Article ] ;
+ dc:title xsd:string ;
+ dc:creator xsd:string ;
+ (dc:datePublished xsd:date ;
+:status [:Published] )
+ | :status [:Draft] ;
+ dc:description xsd:string ;
+ :category xsd:string ;
+ :tag xsd:string* ;
+}
+</pre>
+<h3>Explanation of the ShEx Components</h3>
+<ul>
+<li>:ArticleShape: This is the shape label that uniquely identifies the shape expression intended for validating articles.</li>
+<li>a [:Article]: Specifies that the resource must be an instance of :Article, ensuring type correctness in RDF data.</li>
+<li>dc:title xsd:string; dc:creator xsd:string; dc:description xsd:string; :category xsd:string; These declarations mandate that the title, creator, description, and category of the article must be represented as strings, aligning with the XSD string data type. Each of these properties captures essential metadata of the article.</li>
+<li>(dc:datePublished xsd:date; :status [:Published]) | :status [:Draft]: This part of the shape expression uses a shape choice to validate against two possible states of an article. If the article has a published date (dc:datePublished) which is a required date field, it must also have a status indicating it is [:Published]. Alternatively, the article may simply have a status of [:Draft]&nbsp;without requiring a published date, allowing for flexibility in representing articles at different stages of their lifecycle.</li>
+<li>:tag xsd:string*: Defines an optional sequence of tags associated with the article, where each tag is a string. Using the asterisk (*) indicates that zero or more tags can be associated, providing a mechanism to include additional categorization and keywords as needed.</li>
+</ul>
+<p>This schema ensures that&nbsp;each article in your RDF data graph adheres to the specified structure and data types, helping maintain the consistency and integrity of the data. ShEx provides powerful mechanisms for validating complex and interconnected data structures typical in semantic web technologies, making it highly suitable for a CMS designed around RDF.</p>
+<h2 id="uc3">Use Case 3: Configuration Files for Software Applications</h2>
+<p>Objective: To validate RDF-based configuration files used by software applications to ensure proper application behavior.</p>
+<h3>RDF Representation for Configuration Files</h3>
+<p>Here&rsquo;s how a configuration for a software application could be represented in RDF using Turtle syntax:</p>
+<pre>PREFIX xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt;
+PREFIX config: &lt;http://example.org/config/&gt;
+config:myAppConfig a config:AppConfig ;
+ config:uiConfig config:myUIConfig ;
+ config:databaseConfig config:myLocalDatabaseConfig, config:myRemoteDatabaseConfig ;
+ config:loggingConfig config:myLoggingConfig .
+config:myUIConfig a config:UIConfig ;
+ config:theme "Light"^^xsd:string ;
+ config:fontSize 14^^xsd:integer .
+config:myLocalDatabaseConfig a config:DatabaseConfig, config:LocalDBConfig ;
+ config:databaseName "MyLocalDatabase"^^xsd:string .
+config:myRemoteDatabaseConfig a config:DatabaseConfig, config:RemoteDBConfig ;
+ config:databaseName "MyRemoteDatabase"^^xsd:string ;
+ config:server "remote.example.org"^^xsd:string ;
+ config:port 5432^^xsd:integer ;
+ config:username "remoteuser"^^xsd:string ;
+ config:password "remotepass"^^xsd:string .
+config:myLoggingConfig a config:Logging ;
+ config:level "INFO" ;
+ config:logFile "/var/log/myapp.log"^^xsd:string .
+</pre>
+<h3>Focusing on ShEx features</h3>
+<ul>
+<li>Value Sets</li>
+<li>Negation / IF-THEN pattern</li>
+<li>Disjunction</li>
+<li>Conjunction</li>
+</ul>
+<h3>ShEx Schema for Validating RDF Data</h3>
+<p>A Shape Expressions schema corresponding to the RDF representation of the configuration file would be constructed as follows:</p>
+<pre>PREFIX xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt;
+PREFIX config: &lt;http://example.org/config/&gt;
+config:AppConfigShape {
+ a [config:AppConfig] ;
+ config:uiConfig @config:UIConfigShape ;
+ config:databaseConfig @config:DatabaseConfigShape ;
+ config:loggingConfig @config:LoggingShape ;
+}
+config:UIConfigShape {
+ a [config:UIConfig] ;
+ config:theme xsd:string ;
+ config:fontSize xsd:integer ;
+}
+config:DatabaseConfigShape EXTRA a {
+ a [config:DatabaseConfig] ;
+ config:databaseName xsd:string ;
+} AND
+ NOT { a [ :RemoteDBConfig ]
+}
+ OR {
+ config:server xsd:string ;
+ config:port xsd:integer ;
+ config:username xsd:string ;
+ config:password xsd:string ;
+ }
+config:LoggingShape {
+ a [config:Logging] ;
+ config:level [ "DEBUG" "INFO" "WARNING" "ERROR" ] ;
+ config:logFile xsd:string ;
+}
+</pre>
+<h3>Explanation of the ShEx Components</h3>
+<ul>
+<li>config:AppConfigShape: Validates nodes of type config:AppConfig&nbsp;with references to UI, database, and logging configurations.</li>
+<li>a [config:AppConfig]: Asserts that the node is of type AppConfig.</li>
+<li>config:uiConfig, config:databaseConfig, config:loggingConfig: Each of these properties links to other shapes that define specific configurations.</li>
+<li>config:UIConfigShape: Validates the UI configuration.</li>
+<li>a [config:UIConfig]: Asserts the type.</li>
+<li>config:theme, config:fontSize: Validates theme as a string and font size as an integer.</li>
+<li>config:DatabaseConfigShape: This shape provides a complex validation mechanism for database configurations with exclusive and inclusive conditions:</li>
+<li>EXTRA a: Indicates that all triples describing the database configuration should include type information (a).</li>
+<li>a [config:DatabaseConfig]: Asserts the type as config:DatabaseConfig, explicitly labeling the node as a database configuration.</li>
+<li>NOT { a [:RemoteDBConfig] }: Specifies that the shape should not match if the type :RemoteDBConfig&nbsp;is present, distinguishing local database configurations from remote ones.</li>
+<li>OR { config:server xsd:string; config:port xsd:integer; config:username xsd:string; config:password xsd:string; }: Defines alternative valid configurations for server, port, username, and password, each with specific data types, applicable when the database is not a remote configuration.</li>
+<li>config:LoggingShape: Validates the logging settings.</li>
+<li>a [config:Logging]: Asserts the type.</li>
+<li>config:level: Validates the logging level against a set of allowed values.</li>
+<li>config:logFile: Validates the path to the log file as a string.</li>
+</ul>
+<h2 id="uc4">Use Case 4: Academic and Scientific Data Sharing</h2>
+<p>Objective: To standardize the structure of RDF documents for sharing academic and scientific research data across different institutions.</p>
+<h3>RDF Representation for Research Articles</h3>
+<p>Here&rsquo;s an example of how a research article can be represented using RDF in Turtle syntax:</p>
+<pre>PREFIX dcterms: &lt;http://purl.org/dc/terms/&gt;
+PREFIX schema: &lt;http://schema.org/&gt;
+PREFIX foaf: &lt;http://rdfns.com/foaf/0.1/&gt;
+PREFIX bibo: &lt;http://purl.org/ontology/bibo/&gt;
+PREFIX xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt;
+PREFIX : &lt;http://example.org/article/&gt;
+:GraphDatabases
+ a schema:ScholarlyArticle ;
+ dcterms:title "Exploring the Use of Graph Databases for Knowledge Discovery"^^xsd:string ;
+ schema:author [
+ a foaf:Person ;
+ foaf:firstName "John"^^xsd:string ;
+ foaf:lastName "Doe"^^xsd:string ;
+ schema:affiliation "University of Data Science"^^xsd:string ;
+ schema:identifier "0000-0001-2345-6789"^^xsd:string
+ ] ;
+ dcterms:abstract "This paper investigates the use of graph databases..."^^xsd:string ;
+ schema:keyword "Graph Databases", "Data Science" ;
+ schema:articleBody "The body of the article here..." ;
+ bibo:references [
+ a bibo:AcademicArticle ;
+ dcterms:creator "Smith J."^^xsd:string ;
+ dcterms:date "2023"^^xsd:gYear ;
+ dcterms:title "Advanced Applications of Graph Theory"^^xsd:string ;
+ dcterms:isPartOf "Journal of Computational Graphs"^^xsd:string
+ ] .
+:GraphAlgorithms
+ a schema:ScholarlyArticle ;
+ dcterms:title "Innovative Algorithms in Graph Theory"^^xsd:string ;
+ schema:author [
+ a foaf:Person ;
+ foaf:firstName "Alice"^^xsd:string ;
+ foaf:lastName "Smith"^^xsd:string ;
+ schema:affiliation "Institute of Advanced Computing"^^xsd:string ;
+ schema:identifier "0000-0002-9876-5432"^^xsd:string
+ ] ;
+ dcterms:abstract "This study elaborates on innovative algorithms designed for efficient graph processing."^^xsd:string ;
+ schema:keyword "Graph Algorithms", "Efficiency" ;
+ schema:articleBody "&lt;div&gt;&lt;h2&gt;Introduction to Graph
+Algorithms&lt;/h2&gt;&lt;p&gt;This section
+discusses...&lt;/p&gt;&lt;/div&gt;"^^rdf:HTML ;
+ bibo:references [
+ a bibo:AcademicArticle ;
+ dcterms:creator "Johnson L."^^xsd:string ;
+ dcterms:date "2024"^^xsd:gYear ;
+ dcterms:title "Graph Structures for Large Databases"^^xsd:string ;
+ dcterms:isPartOf "Journal of Data Structures"^^xsd:string
+ ] .
+</pre>
+<h3>Focusing on ShEx features</h3>
+<ul>
+<li>EXTRA qualifier</li>
+<li>node constraint omit (.)</li>
+</ul>
+<h3>ShEx Schema for Validating RDF Data</h3>
+<p>A corresponding ShEx schema to validate the RDF representation of a research article would be:</p>
+<pre>PREFIX dcterms: &lt;http://purl.org/dc/terms/&gt;
+PREFIX schema: &lt;http://schema.org/&gt;
+PREFIX foaf: &lt;http://RDFns.com/foaf/0.1/&gt;
+PREFIX bibo: &lt;http://purl.org/ontology/bibo/&gt;
+PREFIX xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt;
+&lt;#ArticleShape&gt; EXTRA a {
+ a [schema:ScholarlyArticle] ;
+ dcterms:title xsd:string ;
+ schema:author @&lt;#AuthorShape&gt;+ ;
+ dcterms:abstract xsd:string ;
+ schema:keyword xsd:string+ ;
+ schema:articleBody .;
+ bibo:references @&lt;#ReferenceShape&gt;* ;
+}
+&lt;#AuthorShape&gt; EXTRA a {
+ a [foaf:Person] ;
+ foaf:firstName xsd:string ;
+ foaf:lastName xsd:string ;
+ schema:affiliation xsd:string ;
+ schema:identifier xsd:string? ;
+}
+&lt;#ReferenceShape&gt; {
+ a [bibo:AcademicArticle] ;
+ dcterms:creator xsd:string ;
+ dcterms:date xsd:gYear ;
+ dcterms:title xsd:string ;
+ dcterms:isPartOf xsd:string ;
+ ^bibo:references @&lt;#ArticleShape&gt;+
+}
+</pre>
+<h3>Explanation of ShEx Components</h3>
+<ul>
+<li>&lt;#ArticleShape&gt;: This shape validates RDF data representing a scholarly article. It specifies and enforces the structure and content requirements of each article:</li>
+<li>a [schema:ScholarlyArticle]: Asserts that the resource must be typed as a schema:ScholarlyArticle, ensuring the resource is identified correctly as a scholarly article.</li>
+<li>dcterms:title xsd:string: Specifies that the title of the article must be a string, serving as the primary identification and summary of the article's content.</li>
+<li>schema:author @&lt;#AuthorShape&gt;+: Requires one or more authors for the article, linking to the &lt;#AuthorShape&gt;. The + indicates that at least one author is mandatory.</li>
+<li>dcterms:abstract xsd:string: Ensures that an abstract is provided, describing the article's content in a concise form as a string.</li>
+<li>schema:keyword xsd:string+: Mandates that one or more keywords be associated with the article to facilitate topic classification and searchability. Each keyword must be a string, and the + signifies that at least one keyword is required.</li>
+<li>.: Requires the inclusion of the main text of the article. The dot . symbol is used to indicate that any form of content is acceptable here, though typically it would be a text string.</li>
+<li>bibo:references @&lt;#ReferenceShape&gt;*: Allows for zero or more cited references, each validated against the &lt;#ReferenceShape&gt;. The *&nbsp;indicates that references are optional but must conform to the reference shape when present.</li>
+<li>&lt;#AuthorShape&gt;: This shape validates the structure and details of an author of a scholarly article:</li>
+<li>a [foaf:Person]: Asserts that the resource should be typed as a foaf:Person, classifying the individual correctly within RDF data.</li>
+<li>foaf:firstName xsd:string&nbsp;and foaf:lastName xsd:string: Require that the first and last names of the author be specified as strings.</li>
+<li>schema:affiliation xsd:string: Specifies the author's institutional or organizational affiliation as a string, important for attributing the academic or research background.</li>
+<li>schema:identifier xsd:string?: Allows for an optional identifier (such as an ORCID) for the author, providing a unique identifier that enhances the author's traceability in academic databases.</li>
+<li>&lt;#ReferenceShape&gt;: This shape is designed to validate the details of references cited in a scholarly article:</li>
+<li>a [bibo:AcademicArticle]: Ensures that each reference is classified as an academic article, reinforcing the scholarly nature of the citations.</li>
+<li>dcterms:creator xsd:string:&nbsp;Specifies the creator or author of the referenced work as a string.</li>
+<li>dcterms:date xsd:gYear: Requires the publication year of the referenced work, helping to contextualize the citation historically.</li>
+<li>dcterms:title xsd:string: Demands a title for the referenced work, necessary for identifying the work in the reference list.</li>
+<li>dcterms:isPartOf xsd:string: Specifies the publication or journal where the referenced work appeared, as a string.</li>
+<li>^bibo:references @&lt;#ArticleShape&gt;+: This constraint uses the inverse triple constraint operator (^), which specifies that the reference node must be cited by one or more scholarly articles. Instead of defining outgoing references from the node, this constraint ensures that there are incoming references from other articles that use this reference, establishing a reciprocal and verifiable link in citation data.</li>
+</ul>
+<h2 id="uc5">Use Case 5: E-Government Services</h2>
+<p>Objective: To standardize RDF documents used in e-government portals for services such as applications, registrations, and transactions.</p>
+<h3>RDF Representation for E-Government Service Applications</h3>
+<p>Below is an example of how a government service application can be represented using RDF in Turtle syntax:</p>
+<pre>@prefix xsd:
+&lt;http://www.w3.org/2001/RDFSchema#&gt; .
+@prefix egov:
+&lt;http://example.gov/ontology#&gt; .
+egov:App123456789
+ a egov:GovernmentApplication ;
+ egov:applicationID "123456789" ;
+ egov:applicant [
+ a egov:Applicant ;
+ egov:firstName "John" ;
+ egov:lastName "Doe" ;
+ egov:dob "1980-05-15"^^xsd:date ;
+ egov:address [
+ a egov:Address ;
+ egov:street "123 Elm St" ;
+ egov:city "Anytown" ;
+ egov:state "Stateville" ;
+ egov:zipCode "12345"
+ ] ;
+ ] ;
+ egov:serviceRequested "Passport Renewal" ;
+ egov:applicationDate "2024-04-12"^^xsd:date ;
+ egov:attachment [
+ a egov:Attachment ;
+ egov:attachmentType "Identification Document" ;
+ egov:attachmentFile "ID_Document.pdf"
+ ] .
+</pre>
+<h3>Focusing on ShEx features</h3>
+<ul>
+<li>Closed Shapes</li>
+<li>Facets on Literals (including regexps)</li>
+<li>Schema importing</li>
+</ul>
+<h3>ShEx Schema for Validating RDF Data</h3>
+<p>Here is a corresponding ShEx schema to validate the RDF representation of an e-government service application:</p>
+<pre># main.shex
+PREFIX xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt;
+PREFIX egov: &lt;http://example.gov/ontology#&gt;
+IMPORT &lt;attachments.shex&gt;
+egov:GovernmentApplicationShape {
+ a [egov:GovernmentApplication] ;
+ egov:applicationID xsd:string ;
+ egov:applicant @egov:ApplicantShape ;
+ egov:serviceRequested xsd:string ;
+ egov:applicationDate xsd:date ;
+ egov:attachment @egov:AttachmentShape* ;
+}
+egov:ApplicantShape CLOSED {
+ a [egov:Applicant] ;
+ egov:firstName xsd:string ;
+ egov:lastName xsd:string ;
+ egov:dob xsd:date ;
+ egov:address @egov:AddressShape ;
+}
+egov:AddressShape {
+ a [egov:Address] ;
+ egov:street xsd:string MaxLength 2 ;
+ egov:city xsd:string ;
+ egov:state xsd:string ;
+ egov:zipCode xsd:string ;
+</pre>
+<hr />
+<pre># attachments.shex
+PREFIX xsd: &lt;http://www.w3.org/2001/RDFSchema#&gt;
+PREFIX egov: &lt;http://example.gov/ontology#&gt;
+egov:AttachmentShape {
+ a [egov:Attachment] ;
+ egov:attachmentType xsd:string ;
+ egov:attachmentFile xsd:string ;
+} AND (
+ { egov:attachmentFile
+[xsd:string PATTERN "\\.pdf$"] }
+ OR
+ { egov:attachmentFile
+[xsd:string PATTERN "\\.docx$"] }
+)
+</pre>
+<h3>Explanation of ShEx Components</h3>
+<ul>
+<li>egov:GovernmentApplicationShape: This shape validates RDF data representing a government application, ensuring that each application adheres to the required structure:</li>
+<li>a [egov:GovernmentApplication]: Confirms that the resource is classified correctly as a government application.</li>
+<li>egov:applicationID xsd:string: Requires that the application ID is provided as a string, serving as a unique identifier for the application.</li>
+<li>egov:applicant @egov:ApplicantShape: Links to the egov:ApplicantShape&nbsp;for validating detailed information about the applicant, ensuring that applicant details are complete and correctly formatted.</li>
+<li>egov:serviceRequested xsd:string: Specifies that the service requested in the application must be recorded as a string, detailing the specific government service being applied for.</li>
+<li>egov:applicationDate xsd:date: Ensures the date of the application is captured as an xsd:date, providing a timestamp for when the application was made.</li>
+<li>egov:attachment @egov:AttachmentShape*: Allows for zero or more attachments, each validated against the egov:AttachmentShape. The *&nbsp;indicates that attachments are optional but, if present, must comply with the defined attachment shape.</li>
+<li>egov:ApplicantShape: This shape is defined as a closed shape, ensuring rigorous validation of the structure and details of an applicant in a government application. Designating this shape as closed serves to confirm that only explicitly specified data fields are included, optimizing data integrity and efficiency. This approach minimizes unnecessary data exposure and transmission over the network, enhancing security and reducing bandwidth usage.</li>
+<li>a [egov:Applicant]: Asserts that the resource is an applicant, correctly typed within RDF data.</li>
+<li>egov:firstName xsd:string and egov:lastName xsd:string:&nbsp;Require that the first and last names of the applicant are provided as strings.</li>
+<li>egov:dob xsd:date: Validates the applicant's date of birth, ensuring it is formatted as an xsd:date.</li>
+<li>egov:address @egov:AddressShape: Links to the egov:AddressShape&nbsp;for validating the address details of the applicant, guaranteeing that address components are properly structured and validated.</li>
+<li>egov:AddressShape: Defines the structure for validating the address of an applicant:</li>
+<li>a [egov:Address]: Ensures the resource is identified as an address.</li>
+<li>egov:street xsd:string, egov:city xsd:string, egov:state xsd:string, and egov:zipCode xsd:string: Specify that the street, city, state, and zip code of the address must be strings, detailing the complete address necessary for official records.</li>
+<li>egov:AttachmentShape: Validates the details and format of attachments included in a government application:</li>
+<li>a [egov:Attachment]: Confirms that the resource is an attachment.</li>
+<li>egov:attachmentType xsd:string: Specifies the type of attachment as a string, categorizing the document type (e.g., proof of identity, residence certification).</li>
+<li>egov:attachmentFile xsd:string: Validates the attachment's file name, with additional constraints for file format: The file must end in .pdf&nbsp;or .docx,&nbsp;as enforced by regular expressions in separate branches. This ensures that the attachment is in one of the accepted document formats, suitable for official processing and archiving.</li>
+</ul>
+<h1>Requirements</h1>
+<h2 id="r1">R1. Support for Complex Data Structures</h2>
+<p><strong>Description</strong>: Support for complex and nested RDF data structures typical in enterprise applications.</p>
+<p><strong>Motivation</strong>: <a href="#uc1">UC1</a>, <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: This requirement ensures that RDF systems can handle complex, hierarchical data models common in enterprise settings, enabling efficient management and querying of interconnected data.</p>
+
+<h2 id="r2">R2. Efficient Validation Mechanisms</h2>
+<p><strong>Description</strong>: Efficient validation mechanisms to minimize the performance overhead on system resources during data interchange.</p>
+<p><strong>Motivation</strong>: <a href="#uc1">UC1</a>, <a href="#uc3">UC3</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: This requirement focuses on reducing the computational cost associated with validating RDF data, which is essential for maintaining high performance and responsiveness in large-scale applications.</p>
+
+<h2 id="r3">R3. Schema Versioning and Extensibility</h2>
+<p><strong>Description</strong>: Enhance support for schema versioning and extension mechanisms to accommodate evolving data exchange standards and requirements, emphasizing modularity.</p>
+<p><strong>Motivation</strong>: <a href="#uc1">UC1</a>, <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: By enhancing support for schema versioning and promoting extensibility, this requirement facilitates the RDF frameworks' ability to adapt to dynamic changes in data standards and business requirements. Emphasizing modularity in these frameworks allows for more manageable updates and extensions, reducing the potential for significant disruptions and ensuring continuous alignment with emerging standards.</p>
+
+<h2 id="r4">R4. Structural Validation</h2>
+<p><strong>Description</strong>: Ensure that RDF documents conform to predefined structures suitable for different operations, such as content creation, update, and retrieval.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc3">UC3</a></p>
+<p><strong>Explanation</strong>: This requirement guarantees that RDF data aligns with specific schema structures, which is crucial for consistently operating content management systems.</p>
+
+<h2 id="r5">R5. Schema Flexibility</h2>
+<p><strong>Description</strong>: Ability to easily modify schemas as the content types evolve over time without extensive refactoring.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc4">UC4</a></p>
+<p><strong>Explanation</strong>: It promotes adaptability and ease of maintenance by allowing for schema modifications in response to evolving content needs without the need for substantial changes to the existing database structures.</p>
+
+<h2 id="r6">R6. Clear Error Reporting</h2>
+<p><strong>Description</strong>: Provide clear, actionable error messages that assist users in correcting RDF documents that fail validation.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc3">UC3</a></p>
+<p><strong>Explanation</strong>: This requirement helps users understand and resolve data validation errors effectively, improving the usability and reliability of RDF data handling.</p>
+
+<h2 id="r7">R7. Precise Schema Conformance</h2>
+<p><strong>Description</strong>: Guarantee configuration files strictly adhere to the required schema to prevent runtime errors and misconfigurations.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc3">UC3</a></p>
+<p><strong>Explanation</strong>: Ensuring strict conformance to schemas in configuration files reduces the likelihood of errors and system failures, enhancing system stability and reliability.</p>
+
+<h2 id="r8">R8. Simplicity in Schema Definitions</h2>
+<p><strong>Description</strong>: Provide simple schema definitions that are easy for developers and system administrators to understand and implement.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc3">UC3</a></p>
+<p><strong>Explanation</strong>: This requirement ensures that schemas are user-friendly, facilitating easier adoption and implementation by developers and system administrators.</p>
+
+<h2 id="r9">R9. Seamless Integration</h2>
+<p><strong>Description</strong>: Easy integration with software development tools and environments for seamless validation during development and deployment processes.</p>
+<p><strong>Motivation</strong>: <a href="#uc2">UC2</a>, <a href="#uc3">UC3</a></p>
+<p><strong>Explanation</strong>: Facilitates embedding RDF data validation into software development pipelines, thereby streamlining development workflows and reducing integration issues.</p>
+
+<h2 id="r10">R10. Interoperability Across Domains</h2>
+<p><strong>Description</strong>: Ensure that RDF schemas are sufficiently flexible to handle diverse domains and data types while maintaining interoperability.</p>
+<p><strong>Motivation</strong>: <a href="#uc1">UC1</a>, <a href="#uc4">UC4</a></p>
+<p><strong>Explanation</strong>: This requirement supports the use of RDF in various fields by ensuring schemas can accommodate a wide range of data types and structures while maintaining compatibility across different systems.</p>
+
+<h2 id="r11">R11. Complex Validation Logic</h2>
+<p><strong>Description</strong>: Capable of embedding complex validation logic to ensure the accuracy and completeness of the different data.</p>
+<p><strong>Motivation</strong>: <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: By incorporating complex validation logic, this requirement helps ensure data integrity and accuracy, which is crucial for critical applications such as financial and scientific datasets.</p>
+
+<h2 id="r12">R12. Compliance with Data Sharing Standards</h2>
+<p><strong>Description</strong>: Adhere to international data sharing standards and protocols, ensuring the schema is flexible enough to incorporate additional properties not initially specified.</p>
+<p><strong>Motivation</strong>: <a href="#uc3">UC3</a>, <a href="#uc4">UC4</a></p>
+<p><strong>Explanation</strong>: Ensures that RDF schemas remain compliant with global data-sharing protocols, enhancing the interoperability and extensibility of data exchange frameworks.</p>
+
+<h2 id="r13">R13. Security and Privacy in Schemas</h2>
+<p><strong>Description</strong>: Ensure schemas support sensitive information's secure and private handling, adhering to relevant privacy standards.</p>
+<p><strong>Motivation</strong>: <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: This requirement is critical for protecting sensitive information by incorporating security and privacy measures directly into the RDF schemas, aligning with legal and ethical standards.</p>
+
+<h2 id="r14">R14. Accessibility of Schemas</h2>
+<p><strong>Description</strong>: Schemas must be designed to be accessible and usable by various IT systems.</p>
+<p><strong>Motivation</strong>: <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: Promotes universal access and usability, ensuring that RDF schemas can be implemented across different technological platforms and environments.</p>
+
+<h2 id="r15">R15. Scalability of Data Handling</h2>
+<p><strong>Description</strong>: Handle potentially large volumes of data and transactions typical for different services.</p>
+<p><strong>Motivation</strong>: <a href="#uc1">UC1</a>, <a href="#uc4">UC4</a>, <a href="#uc5">UC5</a></p>
+<p><strong>Explanation</strong>: This requirement ensures that RDF systems can scale to meet the demands of high-volume, high-transaction environments, which are critical for enterprise-level applications.</p>
+</body>
+</html>
